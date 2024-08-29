@@ -4,20 +4,27 @@
 from PIL import Image
 from bitstring import BitArray
 
-CHAR_WIDTH = 4
-CHAR_HEIGHT = 8
+# http://eighttails.seesaa.net/article/399694802.html
+# says the PC-6001 font is 8 x 12 pixels, which it is, but the actual tile
+# in the ROM seems to be 8 x 16 to keep things square
+CHAR_WIDTH = 8
+CHAR_HEIGHT = 16
 
-offset = 5
-ptr = offset * (CHAR_WIDTH * CHAR_HEIGHT) # 5x7 bits makes no sense.
+# [y * width + x]
 
 with open('CGROM60.60', 'rb') as f:
-    a = BitArray(bytearray(f.read()))
+    rom = bytearray(f.read())
+    a = BitArray(rom)
 
-x = Image.new('1', (CHAR_WIDTH, CHAR_HEIGHT))
+for character in range(0, 256):
+    ptr = character * (CHAR_WIDTH*CHAR_HEIGHT) # tile molester says so, so..
 
-for column in range(0, CHAR_WIDTH):
-    for row in range(0, CHAR_HEIGHT):
-        value = a[ptr + (column * CHAR_HEIGHT) + row]
-        x.putpixel((column, row), value)
+    x = Image.new('1', (CHAR_WIDTH, CHAR_HEIGHT))
 
-x.save('out.png')
+    for column in range(0, CHAR_WIDTH):
+        for row in range(0, CHAR_HEIGHT):
+            value = a[ptr + (row * CHAR_WIDTH) + column]
+            x.putpixel((column, row), value)
+
+    formatted = format(character, '03')
+    x.save(f'out-{formatted}.png')
